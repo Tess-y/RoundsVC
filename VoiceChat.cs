@@ -65,7 +65,7 @@ namespace RoundsVC
             EVoiceResult ret = SteamUser.DecompressVoice(DestBuffer, (uint)BytesWritten, DestBuffer2, (uint)DestBuffer2.Length, out BytesWritten2, 22050);
             if (ret == EVoiceResult.k_EVoiceResultOK && BytesWritten2 > 0)
             {
-                audioSource.clip = AudioClip.Create(UnityEngine.Random.Range(100, 1000000).ToString(), 22050, 1, 22050, false);
+                audioSource.clip = AudioClip.Create(Guid.NewGuid().ToString(), 22050, 1, 22050, false);
 
                 float[] test = new float[22050];
                 for (int i = 0; i < test.Length; ++i)
