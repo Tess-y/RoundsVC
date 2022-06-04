@@ -10,7 +10,7 @@ namespace RoundsVC.Patches
     {
         public static void Postfix(Player __instance)
         {
-            __instance.gameObject.GetOrAddComponent<AudioSource>();
+            //__instance.gameObject.GetOrAddComponent<VoiceChatPeer>();
         }
     }
 }
