@@ -3,84 +3,170 @@ using Steamworks;
 using System;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Networking;
+using Photon.Realtime;
+using UnboundLib.Networking;
+using UnboundLib;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace RoundsVC
 {
-    public class VoiceChat : NetworkBehaviour
+    public class VoiceChat : MonoBehaviour
     {
-        internal AudioSource audioSource;
-        internal PhotonView view;
-        internal Player _player;
+        /// <summary>
+        /// This is the global voice chat manager which handles all voice inputs and outputs
+        /// It exists on the plugin object itself so that voice chat can work in lobbies
+        /// 
+        /// Audio sources are located on player gameobjects OR on child gameobjects of
+        /// this object, which are used in the case that a player object cannot be found
+        /// 
+        /// A default channel exists for in-lobby global voice and in-game global voice
+        /// all other channels must be made by gamemodes/other mods
+        /// 
+        /// the default channels can be disabled by external mods
+        /// 
+        /// </summary>
 
-        public int channel = 0;
-        public int[] liseningTo = new int[] { 0 };
-        public float falloffStartDistence = int.MaxValue;
-        public float maxDistence = int.MaxValue;
+        public const int SampleRate = 44100; // must be between 11025 and 48000
+        public const int Threshold = 512;
 
-        void Start() { SteamUser.StartVoiceRecording(); _player = gameObject.GetComponent<Player>(); view = _player.data.view; audioSource = gameObject.AddComponent<AudioSource>();  }
+        public static VoiceChat Instance = null;
+        public static Photon.Realtime.Player Actor => PhotonNetwork.LocalPlayer;
+        private static Dictionary<int, IVoiceChannel> channels = new Dictionary<int, IVoiceChannel>();
+        public static ReadOnlyDictionary<int, IVoiceChannel> VoiceChannels => new ReadOnlyDictionary<int, IVoiceChannel>(channels);
+
+        public static void AddChannel(IVoiceChannel voiceChannel)
+        {
+            // add the channel if its ID doesn't already exist
+            if (!channels.ContainsKey(voiceChannel.ChannelID))
+            {
+                channels.Add(voiceChannel.ChannelID, voiceChannel);
+            }
+            else
+            {
+                RoundsVC.LogError(new InvalidOperationException("A channel with that Channel ID already exists"));
+            }
+        }
+
+        private AudioSource GetAudioSource(bool directional, int actorID)
+        {
+            Player source = PlayerManager.instance.GetPlayerWithActorID(actorID);
+            if (directional && source is null)
+            {
+                RoundsVC.LogError(new InvalidOperationException("Player with ActorID " + actorID + " does not exist"));
+                return null;
+            }
+
+            
+            if (directional)
+            {
+                // check if the player has a "VoiceChat" child object, and if not, create one
+                Transform voiceChat = source.transform.Find("VoiceChat");
+                if (voiceChat is null)
+                {
+                    voiceChat = new GameObject("VoiceChat", typeof(AudioSource)).transform;
+                    voiceChat.parent = source.transform;
+                }
+                return voiceChat.GetComponent<AudioSource>();
+            }
+            else
+            {
+                // check if this object has a "VoiceChat" child object, and if not, create one
+                Transform voiceChat = this.transform.Find("VoiceChat");
+                if (voiceChat is null)
+                {
+                    voiceChat = new GameObject("VoiceChat").transform;
+                    voiceChat.parent = this.transform;
+                }
+                
+                // check if the voicechat object has a "<actorID>" child object, and if not, create one
+                Transform playerChat = voiceChat.Find($"{actorID}");
+                if (playerChat is null)
+                {
+                    playerChat = new GameObject($"{actorID}", typeof(AudioSource)).transform;
+                    playerChat.parent = voiceChat;
+                }
+                return playerChat.GetComponent<AudioSource>();
+            }
+        }
+        
+        void Awake()
+        {
+            Instance = this;
+        }
+
+        void Start()
+        { 
+            SteamUser.StartVoiceRecording();
+        }
         void Update()
         {
-            if (view.IsMine && Input.GetKeyUp(KeyCode.V))
-                SteamUser.StartVoiceRecording();
-            else if (view.IsMine && Input.GetKeyDown(KeyCode.V))
-                SteamUser.StopVoiceRecording();
+            if (Actor is null) { return; }
 
-
-            if (view.IsMine)
+            int? speakingChannelID = null;
+            try
             {
-                uint Compressed;
-                EVoiceResult ret = SteamUser.GetAvailableVoice(out Compressed);
-                if (ret == EVoiceResult.k_EVoiceResultOK && Compressed > 1024)
+                speakingChannelID = channels.OrderByDescending(kv => kv.Value.Priority).Where(kv => kv.Value.SpeakingEnabled(PlayerManager.instance.GetLocalPlayer())).Select(kv => kv.Value.ChannelID).First();
+            }
+            catch
+            {
+                return;
+            }
+            if (speakingChannelID is null) { return; }
+            
+            EVoiceResult ret = SteamUser.GetAvailableVoice(out uint Compressed);
+            if (ret == EVoiceResult.k_EVoiceResultOK && Compressed > Threshold)
+            {
+                byte[] DestBuffer = new byte[1024];
+                ret = SteamUser.GetVoice(true, DestBuffer, 1024, out uint BytesWritten);
+                if (ret == EVoiceResult.k_EVoiceResultOK && BytesWritten > 0)
                 {
-                    UnityEngine.Debug.Log(Compressed);
-                    byte[] DestBuffer = new byte[1024];
-                    uint BytesWritten;
-                    ret = SteamUser.GetVoice(true, DestBuffer, 1024, out BytesWritten);
-                    if (ret == EVoiceResult.k_EVoiceResultOK && BytesWritten > 0)
-                    {
-                        Cmd_SendData(DestBuffer, BytesWritten);
-                    }
+                    SendData(DestBuffer, BytesWritten, (int)speakingChannelID);
                 }
             }
         }
 
-        [Command(channel = 2)]
-        void Cmd_SendData(byte[] data, uint size)
+        void SendData(byte[] data, uint size, int channelID)
         {
-            foreach(Player player in PlayerManager.instance.players.Where(p => p.playerID != _player.playerID))
+            if (RoundsVC.DEBUG)
             {
-                if(player.gameObject.GetComponent<VoiceChat>().liseningTo.Contains(channel))
-                typeof(PhotonNetwork).GetMethod("RPC", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic, null,
-                    new Type[] { typeof(PhotonView), typeof(string), typeof(Photon.Realtime.Player), typeof(bool), typeof(object[]) }, null)
-                    .Invoke(null, new object[] { view, nameof(Target_PlaySound), player.data.view.Owner, false, new object[] { data, (int)size, player.playerID} });
+                NetworkingManager.RPC(typeof(VoiceChat), nameof(PlayVoice), data, (int)size, Actor.ActorNumber, channelID);
+            }
+            else
+            {
+                NetworkingManager.RPC_Others(typeof(VoiceChat), nameof(PlayVoice), data, (int)size, Actor.ActorNumber, channelID);
             }
         }
 
-        [PunRPC]
-        void Target_PlaySound(byte[] DestBuffer, int BytesWritten, int id)
+        [UnboundRPC]
+        static void PlayVoice(byte[] DestBuffer, int BytesWritten, int speakerActorID, int channelID)
         {
-            byte[] DestBuffer2 = new byte[22050 * 2];
-            uint BytesWritten2;
-            EVoiceResult ret = SteamUser.DecompressVoice(DestBuffer, (uint)BytesWritten, DestBuffer2, (uint)DestBuffer2.Length, out BytesWritten2, 22050);
+            Player speaking = PlayerManager.instance.GetPlayerWithActorID(speakerActorID);
+            Player listening = PlayerManager.instance.GetLocalPlayer();
+            if (!channels.TryGetValue(channelID, out IVoiceChannel voiceChannel))
+            {
+                return;
+            }
+            float volume = voiceChannel.RelativeVolume(speaking, listening);
+            if (volume <= 0f)
+            {
+                return;
+            }
+
+            byte[] DestBuffer2 = new byte[SampleRate * 2];
+            EVoiceResult ret = SteamUser.DecompressVoice(DestBuffer, (uint)BytesWritten, DestBuffer2, (uint)DestBuffer2.Length, out uint BytesWritten2, SampleRate);
             if (ret == EVoiceResult.k_EVoiceResultOK && BytesWritten2 > 0)
             {
-                audioSource.clip = AudioClip.Create(Guid.NewGuid().ToString(), 22050, 1, 22050, false);
+                AudioSource audioSource = Instance.GetAudioSource(voiceChannel.Directional, speakerActorID);
+                audioSource.clip = AudioClip.Create(Guid.NewGuid().ToString(), SampleRate, 1, SampleRate, false);
 
-                float[] test = new float[22050];
+                float[] test = new float[SampleRate];
                 for (int i = 0; i < test.Length; ++i)
                 {
                     test[i] = (short)(DestBuffer2[i * 2] | DestBuffer2[i * 2 + 1] << 8) / 32768.0f;
                 }
                 audioSource.clip.SetData(test, 0);
-                Player target = PlayerManager.instance.players.Find(p => p.playerID == id);
-                float distance = Vector2.Distance(transform.position, target.transform.position);
-                if (distance <= falloffStartDistence) audioSource.volume = 1;
-                else if(distance > maxDistence) audioSource.volume = 0;
-                else
-                {
-                    audioSource.volume = 1-(distance - falloffStartDistence)/(maxDistence - falloffStartDistence);
-                }
+                audioSource.volume = volume;
                 audioSource.Play();
             }
         }
