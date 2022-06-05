@@ -15,7 +15,7 @@ namespace RoundsVC
         public SortedList<ulong, VoiceChatPacket> PacketQueue = new SortedList<ulong, VoiceChatPacket>();
         private AudioSource m_audioSource;
         // how many packets we should collect before starting playback
-        static public int PacketBuffer = 10;
+        static public int PacketBuffer = 2;
         // whether or not we're currently waiting for more packets to be collected.
         public bool Buffering = true;
 

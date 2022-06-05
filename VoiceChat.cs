@@ -35,7 +35,7 @@ namespace RoundsVC
         public static ReadOnlyDictionary<int, IVoiceChannel> VoiceChannels => new ReadOnlyDictionary<int, IVoiceChannel>(channels);
 
         // instantiated outside of methods for performance
-        private byte[] compressedBuffer = new byte[8000];
+        //private byte[] compressedBuffer = new byte[8000];
         private static byte[] decompressedBuffer = new byte[SampleRate * 2];
 
         private ulong _packetID = 0;
@@ -133,6 +133,7 @@ namespace RoundsVC
             EVoiceResult ret = SteamUser.GetAvailableVoice(out uint compressedBytes);
             if (ret == EVoiceResult.k_EVoiceResultOK && compressedBytes > 0)
             {
+                byte[] compressedBuffer = new byte[compressedBytes];
                 ret = SteamUser.GetVoice(true, compressedBuffer, compressedBytes, out uint compressedBytesWritten);
                 if (ret == EVoiceResult.k_EVoiceResultOK && compressedBytesWritten > 0)
                 {

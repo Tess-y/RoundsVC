@@ -21,7 +21,7 @@ namespace RoundsVC
         private static string CompatibilityModName = ModName.Replace(" ", "_");
         public const string Version = "0.0.0";
 
-        public const int SampleRate = 11025; // must be between 11025 and 48000
+        public const int SampleRate = 48000; // must be between 11025 and 48000
 
 #if DEBUG
         public const bool DEBUG = true;
