@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnboundLib;
 using System;
+using RoundsVC.UI;
 namespace RoundsVC
 {
     
@@ -14,6 +15,11 @@ namespace RoundsVC
 
         public SortedList<ulong, VoiceChatPacket> PacketQueue = new SortedList<ulong, VoiceChatPacket>();
         private AudioSource m_audioSource;
+        private AudioReverbFilter m_audioReverbFilter;
+        private AudioLowPassFilter m_audioLowPassFilter;
+        private AudioHighPassFilter m_audioHighPassFilter;
+        private AudioEchoFilter m_audioEchoFilter;
+        private AudioDistortionFilter m_audioDistortionFilter;
         // how many packets we should collect before starting playback
         static public int PacketBuffer = 2;
         // whether or not we're currently waiting for more packets to be collected.
@@ -34,6 +40,28 @@ namespace RoundsVC
             m_audioSource.loop = true;
             m_audioSource.clip = AudioClip.Create("VoiceChat", SampleRate * 10, 1, SampleRate, true, OnAudioRead, OnAudioSetPosition);
             m_audioSource.Play();
+            m_audioDistortionFilter = this.gameObject.GetOrAddComponent<AudioDistortionFilter>();
+            m_audioReverbFilter = this.gameObject.GetOrAddComponent<AudioReverbFilter>();
+            m_audioLowPassFilter = this.gameObject.GetOrAddComponent<AudioLowPassFilter>();
+            m_audioHighPassFilter = this.gameObject.GetOrAddComponent<AudioHighPassFilter>();
+            m_audioEchoFilter = this.gameObject.GetOrAddComponent<AudioEchoFilter>();
+            this.DisableAllEffects();
+            
+        }
+        void DisableAllEffects()
+        {
+            this.ApplyEffects(VCAudioEffects.None);
+        }
+        void ApplyEffects(VCAudioEffects effects)
+        {
+            m_audioDistortionFilter.distortionLevel = effects.DistortionLevel;
+            m_audioReverbFilter.reverbPreset = effects.Reverb;
+            m_audioLowPassFilter.cutoffFrequency = effects.LowPassCutoff;
+            m_audioHighPassFilter.cutoffFrequency = effects.HighPassCutoff;
+            m_audioEchoFilter.dryMix = effects.EchoDryMix;
+            m_audioEchoFilter.wetMix = effects.EchoWetMix;
+            m_audioEchoFilter.delay = effects.EchoDelay;
+            m_audioEchoFilter.decayRatio = effects.EchoDecay;
         }
 
         void Update()
@@ -118,6 +146,11 @@ namespace RoundsVC
                 }
                 // update the volume
                 m_audioSource.volume = RoundsVC.GetPlayerOutputVolume(NickName) * RoundsVC.GlobalOutputVolume * m_currentlyPlayingPacket.RelativeVolume;
+                // update the audio effects
+                this.ApplyEffects(VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].Effects);
+                // update UI
+                VCUIHandler.PlayerTalking(m_currentlyPlayingPacket.SpeakerActorID, m_currentlyPlayingPacket.ChannelID);
+
             }
             else
             {

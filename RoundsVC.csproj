@@ -37,9 +37,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Extensions\PlayerManager.cs" />
-    <Compile Include="Patches\Player.cs" />
     <Compile Include="RoundsVC.cs" />
     <Compile Include="IVoiceChannel.cs" />
+    <Compile Include="UI\PlayerBoxFade.cs" />
+    <Compile Include="UI\VCUIHandler.cs" />
+    <Compile Include="VCAudioEffects.cs" />
     <Compile Include="VoiceChannels\DefaultChannel.cs" />
     <Compile Include="VoiceChannels\LobbyChannel.cs" />
     <Compile Include="VoiceChat.cs" />
@@ -88,6 +90,10 @@
     <Reference Include="UnityEngine">
       <HintPath>$(RoundsFolder)\Rounds_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\ROUNDS\Rounds_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.AudioModule">
       <HintPath>$(RoundsFolder)\Rounds_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
@@ -110,9 +116,13 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <Content Include="README.md" />
-    <Content Include="ThunderStore\icon.png" />
-    <Content Include="ThunderStore\manifest.json" />
     <Content Include="publish.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Patches\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="AssetsEmbedded\roundsvc" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

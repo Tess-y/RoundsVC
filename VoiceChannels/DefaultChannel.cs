@@ -8,6 +8,7 @@ namespace RoundsVC.VoiceChannels
         public bool Directional => false;
         public string ChannelName => "Default";
         public Color ChannelColor => new Color32(230, 230, 230, 255);
+        public VCAudioEffects Effects => VCAudioEffects.None;
         public bool SpeakingEnabled(Player player)
         {
             return !(player is null);

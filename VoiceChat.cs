@@ -35,7 +35,6 @@ namespace RoundsVC
         public static ReadOnlyDictionary<int, IVoiceChannel> VoiceChannels => new ReadOnlyDictionary<int, IVoiceChannel>(channels);
 
         // instantiated outside of methods for performance
-        //private byte[] compressedBuffer = new byte[8000];
         private static byte[] decompressedBuffer = new byte[SampleRate * 2];
 
         private ulong _packetID = 0;
@@ -144,7 +143,7 @@ namespace RoundsVC
 
         void SendData(byte[] data, uint size, int channelID)
         {
-            if (false)//RoundsVC.DEBUG)
+            if (RoundsVC.DEBUG)
             {
                 NetworkingManager.RPC_Unreliable(typeof(VoiceChat), nameof(PlayVoice), data, (int)size, this.PacketID.ToString(), Actor.ActorNumber, channelID);
             }
@@ -157,7 +156,7 @@ namespace RoundsVC
         [UnboundRPC]
         static void PlayVoice(byte[] compressedBuffer, int bytesSent, string packetID_as_string, int speakerActorID, int channelID)
         {
-            if (speakerActorID == Actor.ActorNumber) { return; }
+            if (!RoundsVC.DEBUG && speakerActorID == Actor.ActorNumber) { return; }
             ulong packetID = ulong.Parse(packetID_as_string);
             Player speaking = PlayerManager.instance.GetPlayerWithActorID(speakerActorID);
             Player listening = PlayerManager.instance.GetLocalPlayer();
@@ -175,7 +174,7 @@ namespace RoundsVC
             if (ret == EVoiceResult.k_EVoiceResultOK && bytesDecompressed > 0)
             {
 
-                var voiceChatPacket = new VoiceChatPacket(packetID, (int)bytesDecompressed, decompressedBuffer, speakerActorID, volume);
+                var voiceChatPacket = new VoiceChatPacket(packetID, (int)bytesDecompressed, decompressedBuffer, speakerActorID, channelID, volume);
                 VoiceChat.Instance.GetPeer(voiceChannel.Directional, speakerActorID).OnNewSample(voiceChatPacket);
             }
         }

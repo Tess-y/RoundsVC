@@ -10,6 +10,7 @@ namespace RoundsVC
         string ChannelName { get; } // what the user would see
         Color ChannelColor { get; } // channel color
         bool Directional { get; } // whether or not the channel is directional (audio is emitted from the player)
+        VCAudioEffects Effects { get; }
         bool SpeakingEnabled(Player player); // whether or not the player can speak in this channel right now
         float RelativeVolume(Player speaking, Player listening); // the relative volume (0 to 1) of chat in this channel
     }

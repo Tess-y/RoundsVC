@@ -9,19 +9,23 @@ using TMPro;
 using UnityEngine.UI;
 using Photon.Pun;
 using System.Collections.Generic;
+using Jotunn.Utils;
+using RoundsVC.UI;
 
 namespace RoundsVC
 {
-    [BepInPlugin(ModId, ModName, Version)]
+    [BepInPlugin(ModID, ModName, Version)]
     [BepInProcess("Rounds.exe")]
     public class RoundsVC : BaseUnityPlugin
     {
-        private const string ModId = "root.rounds.vc";
+        private const string ModID = "pykess-and-root.plugins.rounds.vc";
         private const string ModName = "RoundsVC";
         private static string CompatibilityModName = ModName.Replace(" ", "_");
         public const string Version = "0.0.0";
 
         public const int SampleRate = 48000; // must be between 11025 and 48000
+        internal static AssetBundle Assets;
+        internal static RoundsVC Instance;
 
 #if DEBUG
         public const bool DEBUG = true;
@@ -68,13 +72,29 @@ namespace RoundsVC
 
         void Awake()
         {
+            Instance = this;
             // Use this to call any harmony patch files your Mod may have
-            var harmony = new Harmony(ModId);
+            var harmony = new Harmony(ModID);
             harmony.PatchAll();
         }
         void Start()
         {
+
+            try
+            {
+                Assets = AssetUtils.LoadAssetBundleFromResources("roundsvc", typeof(RoundsVC).Assembly);
+                if (Assets == null)
+                {
+                    LogError("RoundsVC Assets failed to load.");
+                }
+            }
+            catch
+            {
+                LogError("RoundsVC Assets failed to load.");
+            }
+
             this.gameObject.GetOrAddComponent<VoiceChat>();
+            this.gameObject.GetOrAddComponent<VCUIHandler>();
 
             VoiceChat.AddChannel(new VoiceChannels.LobbyChannel());
             VoiceChat.AddChannel(new VoiceChannels.DefaultChannel());
@@ -87,7 +107,7 @@ namespace RoundsVC
         {
             MenuHandler.CreateText(ModName, menu, out TextMeshProUGUI _, 60);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
-            MenuHandler.CreateSlider("Global Volume", menu, 30, 0f, 2f, GlobalOutputVolume, (val) => { GlobalOutputVolume = val; } , out var _, false);
+            MenuHandler.CreateSlider("Global Volume", menu, 30, 0f, 5f, GlobalOutputVolume, (val) => { GlobalOutputVolume = val; } , out var _, false);
             //MenuHandler.CreateSlider("Input Gain", menu, 30, 0f, 1f, InputGain, (val) => { InputGain = val; } , out var _, false);
             GameObject lobbyMenu = MenuHandler.CreateMenu("LOBBY VOLUME", () => { }, menu, 60, true, true, menu.transform.parent.gameObject);
             lobbyMenu.GetOrAddComponent<LobbyMenuUpdater>();
