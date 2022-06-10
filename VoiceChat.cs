@@ -8,6 +8,8 @@ using UnboundLib.Networking;
 using UnboundLib;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using RoundsVC.UI;
+using RoundsVC.VoiceChannels;
 
 namespace RoundsVC
 {
@@ -46,17 +48,17 @@ namespace RoundsVC
                 return this._packetID;
             }
         }
-        private VoiceChatPeer GetPeer(bool directional, int actorID)
+        private VoiceChatPeer GetPeer(bool spatial, int actorID)
         {
             Player source = PlayerManager.instance.GetPlayerWithActorID(actorID);
-            if (directional && source is null)
+            if (spatial && source is null)
             {
                 RoundsVC.LogError(new InvalidOperationException("Player with ActorID " + actorID + " does not exist"));
                 return null;
             }
 
             
-            if (directional)
+            if (spatial)
             {
                 // check if the player has a "VoiceChat" child object, and if not, create one
                 Transform voiceChat = source.transform.Find("VoiceChatPeer");
@@ -65,7 +67,9 @@ namespace RoundsVC
                     voiceChat = new GameObject("VoiceChatPeer", typeof(VoiceChatPeer)).transform;
                     voiceChat.parent = source.transform;
                 }
-                return voiceChat.GetComponent<VoiceChatPeer>();
+                VoiceChatPeer voiceChatPeer = voiceChat.GetComponent<VoiceChatPeer>();
+                voiceChatPeer.SetSpatial(true);
+                return voiceChatPeer;
             }
             else
             {
@@ -84,8 +88,10 @@ namespace RoundsVC
                     playerChat = new GameObject($"{actorID}", typeof(VoiceChatPeer)).transform;
                     playerChat.parent = voiceChat;
                 }
-                playerChat.GetComponent<VoiceChatPeer>().NickName = PhotonNetwork.CurrentRoom?.GetPlayer(actorID)?.NickName ?? "";
-                return playerChat.GetComponent<VoiceChatPeer>();
+                VoiceChatPeer voiceChatPeer = playerChat.GetComponent<VoiceChatPeer>();
+                voiceChatPeer.NickName = PhotonNetwork.CurrentRoom?.GetPlayer(actorID)?.NickName ?? "";
+                voiceChatPeer.SetSpatial(false);
+                return voiceChatPeer;
             }
         }
 
@@ -100,7 +106,7 @@ namespace RoundsVC
             }
             else
             {
-                RoundsVC.LogError(new InvalidOperationException("A channel with that Channel ID already exists"));
+                RoundsVC.LogError(new InvalidOperationException($"A Voice Channel already exists with channel ID {voiceChannel.ChannelID}: '{channels[voiceChannel.ChannelID].ChannelName}'"));
             }
         }
 
@@ -149,6 +155,7 @@ namespace RoundsVC
             }
             else
             {
+                VCUIHandler.PlayerTalking(Actor.ActorNumber, channelID);
                 NetworkingManager.RPC_Others_Unreliable(typeof(VoiceChat), nameof(PlayVoice), data, (int)size, this.PacketID.ToString(), Actor.ActorNumber, channelID);
             }
         }
@@ -156,7 +163,10 @@ namespace RoundsVC
         [UnboundRPC]
         static void PlayVoice(byte[] compressedBuffer, int bytesSent, string packetID_as_string, int speakerActorID, int channelID)
         {
-            if (!RoundsVC.DEBUG && speakerActorID == Actor.ActorNumber) { return; }
+            if (!RoundsVC.DEBUG && speakerActorID == Actor.ActorNumber)
+            {
+                return;
+            }
             ulong packetID = ulong.Parse(packetID_as_string);
             Player speaking = PlayerManager.instance.GetPlayerWithActorID(speakerActorID);
             Player listening = PlayerManager.instance.GetLocalPlayer();
@@ -169,13 +179,14 @@ namespace RoundsVC
             {
                 return;
             }
+            float spatialBlend = voiceChannel.SpatialEffects.SpatialBlend(speaking, listening);
 
             EVoiceResult ret = SteamUser.DecompressVoice(compressedBuffer, (uint)bytesSent, decompressedBuffer, (uint)decompressedBuffer.Length, out uint bytesDecompressed, (uint)SampleRate);
             if (ret == EVoiceResult.k_EVoiceResultOK && bytesDecompressed > 0)
             {
 
-                var voiceChatPacket = new VoiceChatPacket(packetID, (int)bytesDecompressed, decompressedBuffer, speakerActorID, channelID, volume);
-                VoiceChat.Instance.GetPeer(voiceChannel.Directional, speakerActorID).OnNewSample(voiceChatPacket);
+                var voiceChatPacket = new VoiceChatPacket(packetID, (int)bytesDecompressed, decompressedBuffer, speakerActorID, channelID, volume, spatialBlend);
+                VoiceChat.Instance.GetPeer(voiceChannel.SpatialEffects.Spatialize, speakerActorID).OnNewSample(voiceChatPacket);
             }
         }
     }

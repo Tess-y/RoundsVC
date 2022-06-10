@@ -48,11 +48,15 @@ namespace RoundsVC
             this.DisableAllEffects();
             
         }
+        internal void SetSpatial(bool spatial)
+        {
+            this.gameObject.GetOrAddComponent<AudioSource>().spatialize = spatial;
+        }
         void DisableAllEffects()
         {
-            this.ApplyEffects(VCAudioEffects.None);
+            this.ApplyFilters(AudioFilters.None);
         }
-        void ApplyEffects(VCAudioEffects effects)
+        void ApplyFilters(AudioFilters effects)
         {
             m_audioDistortionFilter.distortionLevel = effects.DistortionLevel;
             m_audioReverbFilter.reverbPreset = effects.Reverb;
@@ -62,6 +66,16 @@ namespace RoundsVC
             m_audioEchoFilter.wetMix = effects.EchoWetMix;
             m_audioEchoFilter.delay = effects.EchoDelay;
             m_audioEchoFilter.decayRatio = effects.EchoDecay;
+        }
+        void ApplySpatial(float spatialBlend, SpatialEffects effects)
+        {
+            m_audioSource.spatialize = effects.Spatialize;
+            m_audioSource.spatialBlend = spatialBlend;
+            m_audioSource.rolloffMode = effects.RolloffMode;
+            m_audioSource.minDistance = effects.MinDistance;
+            m_audioSource.maxDistance = effects.MaxDistance;
+            m_audioSource.dopplerLevel = effects.DopplerLevel;
+            m_audioSource.spatializePostEffects = effects.SpatializePostEffects;
         }
 
         void Update()
@@ -145,9 +159,10 @@ namespace RoundsVC
                     PacketQueue.Remove(m_currentlyPlayingPacket.PacketID);
                 }
                 // update the volume
-                m_audioSource.volume = RoundsVC.GetPlayerOutputVolume(NickName) * RoundsVC.GlobalOutputVolume * m_currentlyPlayingPacket.RelativeVolume;
+                m_audioSource.volume = Optionshandler.vol_Master * RoundsVC.GetPlayerOutputVolume(NickName) * RoundsVC.GlobalOutputVolume * m_currentlyPlayingPacket.RelativeVolume;
                 // update the audio effects
-                this.ApplyEffects(VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].Effects);
+                this.ApplyFilters(VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].AudioFilters);
+                this.ApplySpatial(m_currentlyPlayingPacket.SpatialBlend, VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].SpatialEffects);
                 // update UI
                 VCUIHandler.PlayerTalking(m_currentlyPlayingPacket.SpeakerActorID, m_currentlyPlayingPacket.ChannelID);
 

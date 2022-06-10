@@ -6,10 +6,10 @@
         public int Length;
         public byte[] Data;
         public float[] DecodedData = null;
-        //public bool IsSilence = false;
         public int SpeakerActorID = -1;
         public int ChannelID = -1;
         public float RelativeVolume = 1f;
+        public float SpatialBlend = 0f;
 
         // decodes from steam's uncompressed format to the float format that unity likes
         // note that this might need to change somewhat if i mess around with the frequency.
@@ -23,7 +23,7 @@
             }
         }
 
-        public VoiceChatPacket(ulong PacketID, int Length, byte[] Data, int SpeakerActorID, int ChannelID, float RelativeVolume)
+        public VoiceChatPacket(ulong PacketID, int Length, byte[] Data, int SpeakerActorID, int ChannelID, float RelativeVolume, float SpatialBlend)
         {
             this.PacketID = PacketID;
             this.Length = Length;
@@ -31,6 +31,7 @@
             this.SpeakerActorID = SpeakerActorID;
             this.ChannelID = ChannelID;
             this.RelativeVolume = RelativeVolume;
+            this.SpatialBlend = SpatialBlend;
         }
     }
 

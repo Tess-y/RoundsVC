@@ -29,8 +29,7 @@ namespace RoundsVC.UI
         {
             this.Box = this.GetComponent<Image>();
             this.Text = this.GetComponentInChildren<TextMeshProUGUI>();
-            this.BoxStartColor = this.Box.color;
-            this.TextStartColor = this.Text.color;
+            this.ResetTimer();
         }
         void OnEnable()
         {
@@ -39,6 +38,8 @@ namespace RoundsVC.UI
         public void ResetTimer()
         {
             this.Timer = 0f;
+            if (this.Box != null) { this.BoxStartColor = this.Box.color; }
+            if (this.Text != null) { this.TextStartColor = this.Text.color; }
         }
         void Update()
         {

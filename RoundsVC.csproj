@@ -37,13 +37,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Extensions\PlayerManager.cs" />
+    <Compile Include="Patches\Player.cs" />
     <Compile Include="RoundsVC.cs" />
-    <Compile Include="IVoiceChannel.cs" />
+    <Compile Include="SpatialEffects.cs" />
+    <Compile Include="VoiceChannels\IVoiceChannel.cs" />
     <Compile Include="UI\PlayerBoxFade.cs" />
     <Compile Include="UI\VCUIHandler.cs" />
-    <Compile Include="VCAudioEffects.cs" />
+    <Compile Include="AudioFilters.cs" />
     <Compile Include="VoiceChannels\DefaultChannel.cs" />
     <Compile Include="VoiceChannels\LobbyChannel.cs" />
+    <Compile Include="VoiceChannels\VoiceChannel.cs" />
     <Compile Include="VoiceChat.cs" />
     <Compile Include="VoiceChatPacket.cs" />
     <Compile Include="VoiceChatPeer.cs" />
@@ -118,9 +121,7 @@
     <Content Include="README.md" />
     <Content Include="publish.ps1" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Patches\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="AssetsEmbedded\roundsvc" />
   </ItemGroup>

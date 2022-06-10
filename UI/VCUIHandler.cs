@@ -17,6 +17,8 @@ namespace RoundsVC.UI
 
         private static Dictionary<int,int> actorIDsTalking = new Dictionary<int, int>() { };
 
+        private const int LocalPlayerID = -99;
+
         void Start()
         {
             Instance = this;
@@ -26,18 +28,24 @@ namespace RoundsVC.UI
         {
             foreach (KeyValuePair<int, int> actorIDandChannelID in actorIDsTalking)
             {
-                Transform playerBox = vcLayoutGroup.transform.Find($"{actorIDandChannelID.Key}");
+                int actorID = actorIDandChannelID.Key;
+                int channelID = actorIDandChannelID.Value;
+                Transform playerBox = vcLayoutGroup.transform.Find($"{actorID}");
                 if (playerBox is null)
                 {
                     playerBox = GameObject.Instantiate(vcPlayerBoxPrefab, vcLayoutGroup.transform).transform;
-                    playerBox.gameObject.name = $"{actorIDandChannelID.Key}";
+                    playerBox.gameObject.name = $"{actorID}";
                 }
-                playerBox.GetComponent<Image>().color = VoiceChat.VoiceChannels[actorIDandChannelID.Value].ChannelColor;
+                playerBox.GetComponent<Image>().color = VoiceChat.VoiceChannels[channelID].ChannelColor;
                 TextMeshProUGUI Text = playerBox.GetComponentInChildren<TextMeshProUGUI>();
-                Text.text = $"<smallcaps>{PhotonNetwork.CurrentRoom.Players[actorIDandChannelID.Key].NickName}";
+                Text.text = $"<smallcaps>{(actorID == LocalPlayerID ? PhotonNetwork.LocalPlayer.NickName : PhotonNetwork.CurrentRoom.Players[actorID].NickName)}{(RoundsVC.DEBUG ? $" [{VoiceChat.VoiceChannels[channelID].ChannelName}]" : "")}";
                 Text.color = Color.white;
                 playerBox.gameObject.GetOrAddComponent<PlayerBoxFade>().ResetTimer();
                 playerBox.gameObject.SetActive(true);
+                if (actorID == LocalPlayerID)
+                {
+                    playerBox.SetAsFirstSibling();
+                }
             }
             actorIDsTalking.Clear();
         }
@@ -62,11 +70,18 @@ namespace RoundsVC.UI
         }
         public static void PlayerTalking(int actorID, int channelID)
         {
-            // return if there isn't a matching player, or it is the local player
+            // return if there isn't a matching player
             if (PhotonNetwork.CurrentRoom is null
-                || (!RoundsVC.DEBUG && PhotonNetwork.LocalPlayer.ActorNumber == actorID)
                 || !PhotonNetwork.CurrentRoom.Players.ContainsKey(actorID)) { return; }
-            actorIDsTalking[actorID] = channelID;
+            if (actorID == PhotonNetwork.LocalPlayer.ActorNumber)
+            {
+                // make sure local player is always bottommost (or topmost?) icon
+                actorIDsTalking[LocalPlayerID] = channelID;
+            }
+            else
+            {
+                actorIDsTalking[actorID] = channelID;
+            }
 
         }
     }
