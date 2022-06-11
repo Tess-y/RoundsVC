@@ -5,15 +5,13 @@ using TMPro;
 using RoundsVC.Extensions;
 namespace RoundsVC.UI
 {
-    public class PlayerBoxFade : MonoBehaviour
+    public class PlayerVCIconFade : MonoBehaviour
     {
         public const float StartDelay = 1f;
         public const float FadeTime = 1f;
         private TimeSince Timer;
-        private Color BoxStartColor;
-        private Color TextStartColor;
-        private Image Box;
-        private TextMeshProUGUI Text;
+        private Color StartColor;
+        private SpriteRenderer Icon;
 
         private float FadePerc
         {
@@ -28,8 +26,7 @@ namespace RoundsVC.UI
         }
         void Start()
         {
-            this.Box = this.GetComponent<Image>();
-            this.Text = this.GetComponentInChildren<TextMeshProUGUI>();
+            this.Icon = this.GetComponent<SpriteRenderer>();
             this.ResetTimer();
         }
         void OnEnable()
@@ -39,15 +36,13 @@ namespace RoundsVC.UI
         public void ResetTimer()
         {
             this.Timer = 0f;
-            if (this.Box != null) { this.BoxStartColor = this.Box.color; }
-            if (this.Text != null) { this.TextStartColor = this.Text.color; }
+            if (this.Icon != null) { this.StartColor = this.Icon.color; }
         }
         void Update()
         {
             if (this.Timer > StartDelay)
             {
-                this.Box.color = this.BoxStartColor.WithOpacity(this.FadePerc * this.BoxStartColor.a);
-                this.Text.color = this.TextStartColor.WithOpacity(this.FadePerc * this.TextStartColor.a);
+                this.Icon.color = this.StartColor.WithOpacity(this.FadePerc * this.StartColor.a);
                 if (this.Timer > StartDelay + FadeTime)
                 {
                     this.gameObject.SetActive(false);

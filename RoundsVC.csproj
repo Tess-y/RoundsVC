@@ -36,10 +36,13 @@
     <ProfileFolder>C:\Program Files (x86)\Steam\steamapps\common\ROUNDS</ProfileFolder>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Extensions\Color.cs" />
     <Compile Include="Extensions\PlayerManager.cs" />
     <Compile Include="Patches\Player.cs" />
     <Compile Include="RoundsVC.cs" />
     <Compile Include="SpatialEffects.cs" />
+    <Compile Include="UI\MatchScreenBounds.cs" />
+    <Compile Include="UI\PlayerVCIconFade.cs" />
     <Compile Include="VoiceChannels\IVoiceChannel.cs" />
     <Compile Include="UI\PlayerBoxFade.cs" />
     <Compile Include="UI\VCUIHandler.cs" />
@@ -103,6 +106,10 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(RoundsFolder)\Rounds_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\ROUNDS\Rounds_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.Networking">
       <HintPath>$(RoundsFolder)\Rounds_Data\Managed\UnityEngine.Networking.dll</HintPath>
     </Reference>
@@ -112,8 +119,20 @@
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>$(RoundsFolder)\Rounds_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\ROUNDS\Rounds_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\ROUNDS\Rounds_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\ROUNDS\Rounds_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\ROUNDS\Rounds_Data\Managed\UnityEngine.UIModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

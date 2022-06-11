@@ -1,12 +1,12 @@
 ManifestFileVersion: 0
-CRC: 1893935290
+CRC: 1406921743
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 6e0f0bd0f3d7bba188315b77fc70edf5
+    Hash: 55363c9cf2ead98ac2cf459af2c9c717
   TypeTreeHash:
     serializedVersion: 2
-    Hash: c7e851f52cf2086ed0a2fd2f089598b9
+    Hash: c84b6c1f1259ca953c9ba2025f18cc3f
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -41,6 +41,8 @@ ClassTypes:
   Script: {instanceID: 0}
 - Class: 128
   Script: {instanceID: 0}
+- Class: 212
+  Script: {instanceID: 0}
 - Class: 213
   Script: {instanceID: 0}
 - Class: 222
@@ -52,5 +54,6 @@ ClassTypes:
 Assets:
 - Assets/Prefabs/playerbox.png
 - Assets/Prefabs/PlayerBox.prefab
+- Assets/Prefabs/PlayerVCIcon.prefab
 - Assets/Prefabs/RoundsVC.prefab
 Dependencies: []

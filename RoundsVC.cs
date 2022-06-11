@@ -9,6 +9,7 @@ using TMPro;
 using UnityEngine.UI;
 using Photon.Pun;
 using System.Collections.Generic;
+using System.Collections;
 using Jotunn.Utils;
 using RoundsVC.UI;
 
@@ -26,6 +27,7 @@ namespace RoundsVC
         public const int SampleRate = 48000; // must be between 11025 and 48000
         internal static AssetBundle Assets;
         internal static RoundsVC Instance;
+        private static Coroutine OptionsMenuDemoCO = null;
 
 #if DEBUG
         public const bool DEBUG = true;
@@ -37,10 +39,20 @@ namespace RoundsVC
             get => PlayerPrefs.GetFloat(GetConfigKey("GlobalOutputVolume"), 1f);
             set => PlayerPrefs.SetFloat(GetConfigKey("GlobalOutputVolume"), value);
         }
-        public static float InputGain
+        public static bool UIOnLeft
         {
-            get => PlayerPrefs.GetFloat(GetConfigKey("InputGain"), 0f);
-            set => PlayerPrefs.SetFloat(GetConfigKey("InputGain"), value);
+            get => PlayerPrefs.GetInt(GetConfigKey("UIPositionOnLeft"), 1) == 1;
+            set => PlayerPrefs.SetInt(GetConfigKey("UIPositionOnLeft"), value ? 1 : 0);
+        }
+        public static float UIScale
+        {
+            get => PlayerPrefs.GetFloat(GetConfigKey("UIScale"), 1f);
+            set => PlayerPrefs.SetFloat(GetConfigKey("UIScale"), value);
+        }
+        public static float UIOpacity
+        {
+            get => PlayerPrefs.GetFloat(GetConfigKey("UIOpacity"), 1f);
+            set => PlayerPrefs.SetFloat(GetConfigKey("UIOpacity"), value);
         }
         public static float GetPlayerOutputVolume(string NickName)
         {
@@ -101,53 +113,81 @@ namespace RoundsVC
 
             Unbound.RegisterMenu(ModName, () =>
             {
+                if (OptionsMenuDemoCO != null)
+                {
+                    StopCoroutine(OptionsMenuDemoCO);
+                }
+                OptionsMenuDemoCO = StartCoroutine(DemoUI());
             }, GUI, null, true);
         }
+        private static IEnumerator DemoUI()
+        {
+            while (true)
+            {
+                VCUIHandler.DemoPlayerTalking(0);
+                VCUIHandler.DemoPlayerTalking(1);
+                VCUIHandler.DemoPlayerTalking(2);
+                VCUIHandler.DemoPlayerTalking(3);
+                yield return new WaitForSecondsRealtime(0.1f);
+            }
+        }
+        internal static List<string> LobbyNicknames = new List<string>() { };
+        private static void ReadLobby()
+        {
+            LobbyNicknames.Clear();
+            if (PhotonNetwork.CurrentRoom is null) { return; }
+            foreach (var player in PhotonNetwork.CurrentRoom.Players.Values)
+            {
+                if (player.ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber) { continue; }
+                LobbyNicknames.Add(player.NickName);
+            }
+
+        }
+        private static LobbyMenuUpdater LobbyMenuUpdater = null;
         private static void GUI(GameObject menu)
         {
             MenuHandler.CreateText(ModName, menu, out TextMeshProUGUI _, 60);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
             MenuHandler.CreateSlider("Global Volume", menu, 30, 0f, 5f, GlobalOutputVolume, (val) => { GlobalOutputVolume = val; } , out var _, false);
-            //MenuHandler.CreateSlider("Input Gain", menu, 30, 0f, 1f, InputGain, (val) => { InputGain = val; } , out var _, false);
-            GameObject lobbyMenu = MenuHandler.CreateMenu("LOBBY VOLUME", () => { }, menu, 60, true, true, menu.transform.parent.gameObject);
-            lobbyMenu.GetOrAddComponent<LobbyMenuUpdater>();
+            MenuHandler.CreateSlider("UI Scale", menu, 30, 0f, 5f, UIScale, (val) => { UIScale = val; VCUIHandler.UpdateVisuals(); } , out var _, false);
+            MenuHandler.CreateSlider("UI Opacity", menu, 30, 0f, 1f, UIOpacity, (val) => { UIOpacity = val; VCUIHandler.UpdateVisuals(); } , out var _, false);
+            MenuHandler.CreateToggle(UIOnLeft, "UI Position on Left", menu, (val) => { UIOnLeft = val; VCUIHandler.UpdateVisuals(); }, 30);
+            MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
+            GameObject lobbyMenu = MenuHandler.CreateMenu("LOBBY VOLUME", () => { ReadLobby(); LobbyMenuUpdater.UpdateSliders(); }, menu, 60, true, true, menu.transform.parent.gameObject);
+            LobbyMenuUpdater = lobbyMenu.GetOrAddComponent<LobbyMenuUpdater>();
+
+            // Create back actions
+            menu.GetComponentInChildren<GoBack>(true).goBackEvent.AddListener(() =>
+            {
+                if (OptionsMenuDemoCO != null)
+                {
+                    RoundsVC.Instance.StopCoroutine(OptionsMenuDemoCO);
+                }
+            });
+            menu.transform.Find("Group/Back").gameObject.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                if (OptionsMenuDemoCO != null)
+                {
+                    RoundsVC.Instance.StopCoroutine(OptionsMenuDemoCO);
+                }
+            });
         }
     }
     class LobbyMenuUpdater : MonoBehaviour
     {
-        bool inLobby = false;
-        int numPlayers = -1;
         List<Slider> sliders = new List<Slider>() { };
-        void Update()
+        internal void UpdateSliders()
         {
-            if (inLobby && PhotonNetwork.CurrentRoom == null)
-            {
-                ClearAllSliders();
-                inLobby = false;
-                return;
-            }
-            if (!inLobby && PhotonNetwork.CurrentRoom != null)
-            {
-                ClearAllSliders();
-                CreateAllSliders();
-                inLobby = true;
-                return;
-            }
-            if (inLobby && numPlayers != PhotonNetwork.CurrentRoom.Players.Count)
-            {
-                ClearAllSliders();
-                CreateAllSliders();
-                numPlayers = PhotonNetwork.CurrentRoom.Players.Count;
-                return;
-            }
+            this.ClearAllSliders();
+            this.CreateAllSliders();
         }
         void CreateAllSliders()
         {
-            foreach (Photon.Realtime.Player player in PhotonNetwork.CurrentRoom.Players.Values)
+            foreach (string playerName in RoundsVC.LobbyNicknames)
             {
-                MenuHandler.CreateSlider($"{player.NickName}", this.gameObject, 30, 0f, 2f, RoundsVC.GetPlayerOutputVolume(player.NickName), (val) => { RoundsVC.SetPlayerOutputVolume(player.NickName, val); }, out var _, false);
+                MenuHandler.CreateSlider($"{playerName}", this.gameObject, 30, 0f, 2f, RoundsVC.GetPlayerOutputVolume(playerName), (val) => { RoundsVC.SetPlayerOutputVolume(playerName, val); }, out Slider slider, false);
+                this.sliders.Add(slider);
             }
-            numPlayers = PhotonNetwork.CurrentRoom.Players.Count;
         }
         void ClearAllSliders()
         {
@@ -155,7 +195,7 @@ namespace RoundsVC
             {
                 if (slider != null)
                 {
-                    GameObject.DestroyImmediate(slider.gameObject);
+                    GameObject.DestroyImmediate(slider.gameObject.transform.parent.parent.gameObject);
                 }
             }
             sliders.Clear();

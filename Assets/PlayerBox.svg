@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1000"
+   height="1000"
+   viewBox="0 0 264.58333 264.58334"
+   version="1.1"
+   id="svg2800"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   sodipodi:docname="PlayerBox.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview2802"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:document-units="px"
+     showgrid="false"
+     units="px"
+     width="1000px"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-paths="true"
+     inkscape:snap-page="true"
+     inkscape:zoom="0.90509668"
+     inkscape:cx="443.59902"
+     inkscape:cy="992.71163"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2797" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#ffffff;fill-opacity:0.25;stroke:none;stroke-width:13.0961;stroke-linejoin:round;stroke-opacity:0.501961"
+       id="rect1248"
+       width="264.58334"
+       height="37.620441"
+       x="0"
+       y="226.96289"
+       ry="7.8548179"
+       inkscape:export-filename="C:\Users\qphys\Code\RoundsVC\Assets\RoundsVC\Assets\Prefabs\playerbox.png"
+       inkscape:export-xdpi="192"
+       inkscape:export-ydpi="192" />
+    <path
+       id="rect1248-1"
+       style="fill:none;fill-opacity:0.5;stroke:#ffffff;stroke-width:4.1275;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:0.501961"
+       d="M 7.8548179,226.96289 H 256.72853 c 4.35156,0 7.85481,3.50325 7.85481,7.85482 v 21.9108 c 0,4.35157 -3.50325,7.85482 -7.85481,7.85482 H 7.8548179 C 3.5032488,264.58333 0,261.08008 0,256.72851 v -21.9108 c 0,-4.35157 3.5032488,-7.85482 7.8548179,-7.85482 z"
+       inkscape:export-filename="C:\Users\qphys\Code\RoundsVC\Assets\RoundsVC\Assets\Prefabs\playerbox.png"
+       inkscape:export-xdpi="192"
+       inkscape:export-ydpi="192" />
+  </g>
+</svg>
