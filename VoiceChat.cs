@@ -95,8 +95,6 @@ namespace RoundsVC
             }
         }
 
-
-
         public static void AddChannel(IVoiceChannel voiceChannel)
         {
             // add the channel if its ID doesn't already exist
@@ -110,6 +108,7 @@ namespace RoundsVC
             }
         }
 
+        private bool SteamworksAvailable = false;
                 
         void Awake()
         {
@@ -117,12 +116,21 @@ namespace RoundsVC
         }
 
         void Start()
-        { 
-            SteamUser.StartVoiceRecording();
+        {
+            this.SteamworksAvailable = false;
+            try
+            {
+                SteamUser.StartVoiceRecording();
+                this.SteamworksAvailable = true;
+            }
+            catch
+            {
+                RoundsVC.LogError(new InvalidOperationException("SteamWorks unavailable. Voice chat will not work."));
+            }
         }
         void Update()
         {
-            if (Actor is null) { return; }
+            if (!this.SteamworksAvailable || Actor is null) { return; }
 
             int? speakingChannelID = null;
             try
