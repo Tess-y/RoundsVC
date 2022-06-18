@@ -30,6 +30,7 @@ namespace RoundsVC
         internal static RoundsVC Instance;
         private static Coroutine OptionsMenuDemoCO = null;
         public static bool DefaultChannelEnabled = true;
+        private static bool WarnSteamworksUnavailable = true;
 
 #if DEBUG
         public const bool DEBUG = true;
@@ -93,6 +94,12 @@ namespace RoundsVC
         }
         void Start()
         {
+            if (WarnSteamworksUnavailable && !SteamManager.Initialized)
+            {
+                WarnSteamworksUnavailable = false;
+                LogError("Steamworks is not initialized. Please make sure you have the Steam client installed and running.");
+                Unbound.BuildModal("ROUNDSVC ERROR", "Steamworks is not initialized. Please make sure you have the Steam client installed and running. ROUNDS Voice Chat will not work without it.");
+            }
             On.MainMenuHandler.Awake += (orig, self) =>
             {
                 this.ExecuteAfterSeconds(0.2f, () =>

@@ -175,6 +175,11 @@ namespace RoundsVC
             {
                 return;
             }
+            else if (!VoiceChat.Instance.SteamworksAvailable)
+            {
+                VCUIHandler.PlayerTalking(speakerActorID, channelID);
+                return;
+            }
             ulong packetID = ulong.Parse(packetID_as_string);
             Player speaking = PlayerManager.instance.GetPlayerWithActorID(speakerActorID);
             Player listening = PlayerManager.instance.GetLocalPlayer();

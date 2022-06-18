@@ -5,14 +5,15 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using TMPro;
 using RoundsVC.Extensions;
+using System.Linq;
 namespace RoundsVC.UI
 {
     public class VCUIHandler : MonoBehaviour
     {
         public static VCUIHandler Instance;
-        private static GameObject vcCanvasPrefab = RoundsVC.Assets.LoadAsset<GameObject>("RoundsVC");
-        private static GameObject vcPlayerBoxPrefab = RoundsVC.Assets.LoadAsset<GameObject>("PlayerBox");
-        private static GameObject vcPlayerVCIconPrefab = RoundsVC.Assets.LoadAsset<GameObject>("PlayerVCIcon");
+        internal static GameObject vcCanvasPrefab = RoundsVC.Assets.LoadAsset<GameObject>("RoundsVC");
+        internal static GameObject vcPlayerBoxPrefab = RoundsVC.Assets.LoadAsset<GameObject>("PlayerBox");
+        internal static GameObject vcPlayerVCIconPrefab = RoundsVC.Assets.LoadAsset<GameObject>("PlayerVCIcon");
         private static bool Inited = false;
         public static GameObject vcCanvas;
         public static GameObject vcLayoutGroup => vcCanvas.transform.Find("Canvas").Find("LayoutGroup").gameObject;
@@ -42,7 +43,7 @@ namespace RoundsVC.UI
         }
         void Update()
         {
-            foreach (KeyValuePair<int, int> actorIDandChannelID in actorIDsTalking)
+            foreach (KeyValuePair<int, int> actorIDandChannelID in actorIDsTalking.ToArray())
             {
                 int actorID = actorIDandChannelID.Key;
                 int channelID = actorIDandChannelID.Value;
