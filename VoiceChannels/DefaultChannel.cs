@@ -10,11 +10,11 @@ namespace RoundsVC.VoiceChannels
         public override AudioFilters AudioFilters => AudioFilters.None;
         public override bool SpeakingEnabled(Player player)
         {
-            return !(player is null);
+            return RoundsVC.DefaultChannelEnabled && !(player is null);
         }
         public override float RelativeVolume(Player speaking, Player listening)
         {
-            return (speaking is null || listening is null) ? 0f : 1f;
+            return (speaking is null || listening is null) ? 0f : RoundsVC.DefaultChannelEnabled ? 1f : 0f;
         }
     }
 }

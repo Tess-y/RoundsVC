@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Collections;
 using Jotunn.Utils;
 using RoundsVC.UI;
+using On;
 
 namespace RoundsVC
 {
@@ -28,6 +29,7 @@ namespace RoundsVC
         internal static AssetBundle Assets;
         internal static RoundsVC Instance;
         private static Coroutine OptionsMenuDemoCO = null;
+        public static bool DefaultChannelEnabled = true;
 
 #if DEBUG
         public const bool DEBUG = true;
@@ -91,7 +93,15 @@ namespace RoundsVC
         }
         void Start()
         {
+            On.MainMenuHandler.Awake += (orig, self) =>
+            {
+                this.ExecuteAfterSeconds(0.2f, () =>
+                {
+                    DefaultChannelEnabled = true;
+                });
 
+                orig(self);
+            };
             try
             {
                 Assets = AssetUtils.LoadAssetBundleFromResources("roundsvc", typeof(RoundsVC).Assembly);
