@@ -13,6 +13,9 @@ using System.Collections;
 using Jotunn.Utils;
 using RoundsVC.UI;
 using On;
+using System.Linq;
+using RoundsVC.Utils;
+using InControl;
 
 namespace RoundsVC
 {
@@ -20,6 +23,15 @@ namespace RoundsVC
     [BepInProcess("Rounds.exe")]
     public class RoundsVC : BaseUnityPlugin
     {
+        public enum MicControlType
+        {
+            /// Open Mic / Push To Talk / Push To Toggle
+            /// 0        / 1 (Default)  / 2
+            OpenMic = 0,
+            PushToTalk = 1,
+            PushToToggle = 2
+        }
+
         private const string ModID = "pykess-and-root.plugins.rounds.vc";
         private const string ModName = "RoundsVC";
         private static string CompatibilityModName = ModName.Replace(" ", "_");
@@ -29,14 +41,26 @@ namespace RoundsVC
         internal static AssetBundle Assets;
         internal static RoundsVC Instance;
         private static Coroutine OptionsMenuDemoCO = null;
+        private static GameObject LobbyMenu = null;
+        private static List<Slider> LobbySliders = new List<Slider>() { };
         public static bool DefaultChannelEnabled = true;
         private static bool WarnSteamworksUnavailable = true;
+
+        public static LobbyPlayerActions LobbyActions { get; private set; }
 
 #if DEBUG
         public const bool DEBUG = true;
 #else
         public const bool DEBUG = false;
 #endif
+        public static MicControlType MicControl
+        {
+            /// Open Mic / Push To Talk / Push To Toggle
+            /// 0        / 1 (Default)  / 2
+
+            get => (MicControlType)PlayerPrefs.GetInt(GetConfigKey("MicControlType"), (int)MicControlType.PushToTalk);
+            set => PlayerPrefs.SetInt(GetConfigKey("MicControlType"), (int)value);
+        }
         public static float GlobalOutputVolume
         {
             get => PlayerPrefs.GetFloat(GetConfigKey("GlobalOutputVolume"), 1f);
@@ -124,6 +148,7 @@ namespace RoundsVC
 
             this.gameObject.GetOrAddComponent<VoiceChat>();
             this.gameObject.GetOrAddComponent<VCUIHandler>();
+            this.gameObject.GetOrAddComponent<VoiceControls>();
 
             VoiceChat.AddChannel(new VoiceChannels.LobbyChannel());
             VoiceChat.AddChannel(new VoiceChannels.DefaultChannel());
@@ -136,6 +161,16 @@ namespace RoundsVC
                 }
                 OptionsMenuDemoCO = StartCoroutine(DemoUI());
             }, GUI, null, true);
+
+            this.StartCoroutine(SetupLobbyActionsWhenReady());
+        }
+        private static IEnumerator SetupLobbyActionsWhenReady()
+        {
+            yield return new WaitUntil(() => InputManager.IsSetup);
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            LobbyActions = LobbyPlayerActions.CreateWithKeyboardBindings();
+            yield break;
         }
         private static IEnumerator DemoUI()
         {
@@ -148,6 +183,7 @@ namespace RoundsVC
                 yield return new WaitForSecondsRealtime(0.1f);
             }
         }
+        /*
         internal static List<string> LobbyNicknames = new List<string>() { };
         private static void ReadLobby()
         {
@@ -160,18 +196,149 @@ namespace RoundsVC
             }
 
         }
-        private static LobbyMenuUpdater LobbyMenuUpdater = null;
+        */
+        //private static LobbyMenuUpdater LobbyMenuUpdater = null;
+        private static List<Toggle> OpenMic = new List<Toggle>();
+        private static List<Toggle> PushToTalk = new List<Toggle>();
+        private static List<Toggle> PushToToggle = new List<Toggle>();
+        private static List<Toggle> UIOnLeftToggles = new List<Toggle>();
         private static void GUI(GameObject menu)
         {
             MenuHandler.CreateText(ModName, menu, out TextMeshProUGUI _, 60);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
             MenuHandler.CreateSlider("Global Volume", menu, 30, 0f, 5f, GlobalOutputVolume, (val) => { GlobalOutputVolume = val; } , out var _, false);
+            LobbyMenu = MenuHandler.CreateMenu("LOBBY VOLUME",
+                () =>
+                {
+
+                    foreach (Slider slider in LobbySliders.Where(s => s != null))
+                    {
+                        try
+                        {
+                            DestroyImmediate(slider.gameObject.transform.parent.parent.gameObject);
+                        }
+                        catch
+                        { }
+                    }
+                    LobbySliders.Clear();
+                    if (PhotonNetwork.CurrentRoom is null) { return; }
+                    foreach (string nickname in PhotonNetwork.CurrentRoom.Players.Values.Select(p => p.NickName).ToList())
+                    {
+                        if (nickname == PhotonNetwork.LocalPlayer.NickName) { continue; }
+
+                        MenuHandler.CreateSlider(nickname, LobbyMenu, 30, 0f, 2f, RoundsVC.GetPlayerOutputVolume(nickname), (val) => { RoundsVC.SetPlayerOutputVolume(nickname, val); }, out Slider slider, false);
+                        LobbySliders.Add(slider);
+                    }
+                }, 
+                menu,
+                30,
+                true,
+                true,
+                menu.transform.parent.gameObject);
+
+            void ToggleOpenMic(bool val)
+            {
+                foreach (var toggle in OpenMic)
+                {
+                    if (toggle.isOn != val)
+                    {
+                        toggle.isOn = val;
+                    }
+                }
+                if (!val || RoundsVC.MicControl == MicControlType.OpenMic)
+                {
+                    CheckControlSet();
+                    return; 
+                }
+                RoundsVC.MicControl = MicControlType.OpenMic;
+                foreach (var toggle in PushToTalk)
+                {
+                    toggle.isOn = false;
+                }
+                foreach (var toggle in PushToToggle)
+                {
+                    toggle.isOn = false;
+                }
+            }
+            void TogglePushToTalk(bool val)
+            {
+                foreach (var toggle in PushToTalk)
+                {
+                    if (toggle.isOn != val)
+                    {
+                        toggle.isOn = val;
+                    }
+                }
+                if (!val || RoundsVC.MicControl == MicControlType.PushToTalk)
+                {
+                    CheckControlSet();
+                    return; 
+                }
+                RoundsVC.MicControl = MicControlType.PushToTalk;
+                foreach (var toggle in OpenMic)
+                {
+                    toggle.isOn = false;
+                }
+                foreach (var toggle in PushToToggle)
+                {
+                    toggle.isOn = false;
+                }
+            }
+            void TogglePushToToggle(bool val)
+            {
+                foreach (var toggle in PushToToggle)
+                {
+                    if (toggle.isOn != val)
+                    {
+                        toggle.isOn = val;
+                    }
+                }
+                if (!val || RoundsVC.MicControl == MicControlType.PushToToggle)
+                {
+                    CheckControlSet();
+                    return; 
+                }
+                RoundsVC.MicControl = MicControlType.PushToToggle;
+                foreach (var toggle in OpenMic)
+                {
+                    toggle.isOn = false;
+                }
+                foreach (var toggle in PushToTalk)
+                {
+                    toggle.isOn = false;
+                }
+            }
+            void CheckControlSet()
+            {
+                if (OpenMic.Concat(PushToTalk).Concat(PushToToggle).All(t => !t.isOn))
+                {
+                    // if no control set, set to default
+                    TogglePushToTalk(true);
+                }
+            }
+            
+            void ChangeUIOnLeft(bool val)
+            {
+                UIOnLeft = val;
+                foreach (Toggle toggle in UIOnLeftToggles)
+                {
+                    toggle.isOn = UIOnLeft;
+                }
+            }
+
+            MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
+            MenuHandler.CreateText("Mic Control Style (Default Keybind: [Left Shift])", menu, out TextMeshProUGUI _, 30);
+            OpenMic.Add(MenuHandler.CreateToggle(MicControl == MicControlType.OpenMic, "Open", menu, ToggleOpenMic, 30).GetComponent<Toggle>());
+            PushToTalk.Add(MenuHandler.CreateToggle(MicControl == MicControlType.PushToTalk, "Push To Talk", menu, TogglePushToTalk, 30).GetComponent<Toggle>());
+            PushToToggle.Add(MenuHandler.CreateToggle(MicControl == MicControlType.PushToToggle, "Push To Toggle", menu, TogglePushToToggle, 30).GetComponent<Toggle>());
+
+            MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
             MenuHandler.CreateSlider("UI Scale", menu, 30, 0f, 5f, UIScale, (val) => { UIScale = val; VCUIHandler.UpdateVisuals(); } , out var _, false);
             MenuHandler.CreateSlider("UI Opacity", menu, 30, 0f, 1f, UIOpacity, (val) => { UIOpacity = val; VCUIHandler.UpdateVisuals(); } , out var _, false);
-            MenuHandler.CreateToggle(UIOnLeft, "UI Position on Left", menu, (val) => { UIOnLeft = val; VCUIHandler.UpdateVisuals(); }, 30);
+            UIOnLeftToggles.Add(MenuHandler.CreateToggle(UIOnLeft, "UI Position on Left", menu, (val) => { ChangeUIOnLeft(val); VCUIHandler.UpdateVisuals(); }, 30).GetComponent<Toggle>());
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
-            GameObject lobbyMenu = MenuHandler.CreateMenu("LOBBY VOLUME", () => { ReadLobby(); LobbyMenuUpdater.UpdateSliders(); }, menu, 60, true, true, menu.transform.parent.gameObject);
-            LobbyMenuUpdater = lobbyMenu.GetOrAddComponent<LobbyMenuUpdater>();
+            //GameObject lobbyMenu = MenuHandler.CreateMenu("LOBBY VOLUME", () => { ReadLobby(); LobbyMenuUpdater.UpdateSliders(); }, menu, 60, true, true, menu.transform.parent.gameObject);
+            //LobbyMenuUpdater = lobbyMenu.GetOrAddComponent<LobbyMenuUpdater>();
 
             // Create back actions
             menu.GetComponentInChildren<GoBack>(true).goBackEvent.AddListener(() =>
@@ -190,6 +357,7 @@ namespace RoundsVC
             });
         }
     }
+    /*
     class LobbyMenuUpdater : MonoBehaviour
     {
         List<Slider> sliders = new List<Slider>() { };
@@ -218,4 +386,5 @@ namespace RoundsVC
             sliders.Clear();
         }
     }
+    */
 }

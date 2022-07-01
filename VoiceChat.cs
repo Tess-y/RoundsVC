@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using RoundsVC.UI;
 using RoundsVC.VoiceChannels;
+using RoundsVC.Utils;
 
 namespace RoundsVC
 {
@@ -48,6 +49,7 @@ namespace RoundsVC
                 return this._packetID;
             }
         }
+
         private VoiceChatPeer GetPeer(bool spatial, int actorID)
         {
             Player source = PlayerManager.instance.GetPlayerWithActorID(actorID);
@@ -130,7 +132,7 @@ namespace RoundsVC
         }
         void Update()
         {
-            if (!this.SteamworksAvailable || Actor is null) { return; }
+            if (!this.SteamworksAvailable || Actor is null || !VoiceControls.MicOn) { return; }
 
             int? speakingChannelID = null;
             try

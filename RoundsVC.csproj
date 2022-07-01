@@ -37,12 +37,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Extensions\Color.cs" />
+    <Compile Include="Extensions\PlayerActions.cs" />
     <Compile Include="Extensions\PlayerManager.cs" />
+    <Compile Include="Patches\ArtHandler.cs" />
     <Compile Include="Patches\Player.cs" />
+    <Compile Include="Patches\PlayerActions.cs" />
     <Compile Include="RoundsVC.cs" />
     <Compile Include="SpatialEffects.cs" />
     <Compile Include="UI\MatchScreenBounds.cs" />
     <Compile Include="UI\PlayerVCIconFade.cs" />
+    <Compile Include="Utils\LobbyPlayerActions.cs" />
+    <Compile Include="Utils\VoiceControls.cs" />
     <Compile Include="VoiceChannels\IVoiceChannel.cs" />
     <Compile Include="UI\PlayerBoxFade.cs" />
     <Compile Include="UI\VCUIHandler.cs" />

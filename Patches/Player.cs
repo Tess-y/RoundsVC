@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 using RoundsVC.UI;
+using Photon.Pun;
 namespace RoundsVC.Patches
 {
     [HarmonyPatch(typeof(Player), "Start")]
@@ -8,7 +9,7 @@ namespace RoundsVC.Patches
     {
         static void Postfix(Player __instance)
         {
-            if (__instance.data.view.IsMine)
+            if (__instance.data.view.IsMine && !PhotonNetwork.OfflineMode && PhotonNetwork.CurrentRoom != null)
             {
                 MainCam.instance.cam.transform.Find("AudioListener")?.SetParent(__instance.transform);
             }
