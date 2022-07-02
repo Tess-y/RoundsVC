@@ -159,21 +159,14 @@ namespace RoundsVC
 
         void SendData(byte[] data, uint size, int channelID)
         {
-            if (RoundsVC.DEBUG)
-            {
-                NetworkingManager.RPC_Unreliable(typeof(VoiceChat), nameof(PlayVoice), data, (int)size, this.PacketID.ToString(), Actor.ActorNumber, channelID);
-            }
-            else
-            {
-                VCUIHandler.PlayerTalking(Actor.ActorNumber, channelID);
-                NetworkingManager.RPC_Others_Unreliable(typeof(VoiceChat), nameof(PlayVoice), data, (int)size, this.PacketID.ToString(), Actor.ActorNumber, channelID);
-            }
+            VCUIHandler.PlayerTalking(Actor.ActorNumber, channelID);
+            NetworkingManager.RPC_Others_Unreliable(typeof(VoiceChat), nameof(PlayVoice), data, (int)size, this.PacketID.ToString(), Actor.ActorNumber, channelID);
         }
 
         [UnboundRPC]
         static void PlayVoice(byte[] compressedBuffer, int bytesSent, string packetID_as_string, int speakerActorID, int channelID)
         {
-            if (!RoundsVC.DEBUG && speakerActorID == Actor.ActorNumber)
+            if (speakerActorID == Actor.ActorNumber)
             {
                 return;
             }

@@ -21,7 +21,7 @@ namespace RoundsVC
         private AudioEchoFilter m_audioEchoFilter;
         private AudioDistortionFilter m_audioDistortionFilter;
         // how many packets we should collect before starting playback
-        static public int PacketBuffer = 2;
+        public const int PacketBuffer = 2;
         // whether or not we're currently waiting for more packets to be collected.
         public bool Buffering = true;
 
@@ -149,32 +149,57 @@ namespace RoundsVC
 
         private void GrabNextPacket()
         {
-            if (PacketQueue.Count > 0)
+            while (true)
             {
-                var pair = PacketQueue.First();
-                VoiceChatPacket packet = pair.Value;
-                if (packet != null)
+                try
                 {
-                    m_currentlyPlayingPacket = packet;
-                    PacketQueue.Remove(m_currentlyPlayingPacket.PacketID);
+                    if (PacketQueue.Count > 0)
+                    {
+                        ulong packetID = PacketQueue.Keys[0];
+                        VoiceChatPacket packet = PacketQueue.Values[0];
+                        if (packet != null)
+                        {
+                            m_currentlyPlayingPacket = packet;
+                            PacketQueue.Remove(packetID);
+                            // update the volume
+                            m_audioSource.volume = Optionshandler.vol_Master * RoundsVC.GetPlayerOutputVolume(NickName) * RoundsVC.GlobalOutputVolume * m_currentlyPlayingPacket.RelativeVolume;
+                            // update the audio effects
+                            this.ApplyFilters(VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].AudioFilters);
+                            this.ApplySpatial(m_currentlyPlayingPacket.SpatialBlend, VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].SpatialEffects);
+                            // update UI
+                            try
+                            {
+                                VCUIHandler.PlayerTalking(m_currentlyPlayingPacket.SpeakerActorID, m_currentlyPlayingPacket.ChannelID);
+                            }
+                            catch (Exception e)
+                            {
+                                RoundsVC.LogError($"[{NickName} VCPeer] ERROR IN GRABNEXTPACKET:");
+                                RoundsVC.LogError(e);
+                            }
+                        }
+                        else
+                        {
+                            RoundsVC.LogError($"[{NickName} VCPeer] GOT NULL PACKET. ATTEMPTING TO RECOVER.");
+                            PacketQueue.Remove(packetID);
+                        }
+
+                    }
+                    else
+                    {
+                        m_currentlyPlayingPacket = null;
+                        Buffering = true;
+                    }
+
+                    // reset the index.
+                    m_currentlyPlayingPacketSampleIndex = 0;
+                    break;
                 }
-                // update the volume
-                m_audioSource.volume = Optionshandler.vol_Master * RoundsVC.GetPlayerOutputVolume(NickName) * RoundsVC.GlobalOutputVolume * m_currentlyPlayingPacket.RelativeVolume;
-                // update the audio effects
-                this.ApplyFilters(VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].AudioFilters);
-                this.ApplySpatial(m_currentlyPlayingPacket.SpatialBlend, VoiceChat.VoiceChannels[m_currentlyPlayingPacket.ChannelID].SpatialEffects);
-                // update UI
-                VCUIHandler.PlayerTalking(m_currentlyPlayingPacket.SpeakerActorID, m_currentlyPlayingPacket.ChannelID);
-
+                catch (Exception e)
+                {
+                    RoundsVC.LogError($"[{NickName} VCPeer] ERROR IN GRABNEXTPACKET:");
+                    RoundsVC.LogError(e);
+                }
             }
-            else
-            {
-                m_currentlyPlayingPacket = null;
-                Buffering = true;
-            }
-
-            // reset the index.
-            m_currentlyPlayingPacketSampleIndex = 0;
         }
 
         public void OnNewSample(VoiceChatPacket newPacket)
@@ -182,14 +207,14 @@ namespace RoundsVC
             // throw out duplicates. this should never happen...
             if (PacketQueue.ContainsKey(newPacket.PacketID))
             {
-                Debug.LogError("already have packet " + newPacket.PacketID + ". aborting");
+                RoundsVC.LogError($"[{NickName} VCPeer] Already have packet " + newPacket.PacketID + ". aborting");
                 return;
             }
 
             // throw out old packets
             if (m_lastPlayedPacketId > newPacket.PacketID)
             {
-                Debug.Log("throwing out old packet " + newPacket.PacketID);
+                RoundsVC.LogError($"[{NickName} VCPeer] Throwing out old packet " + newPacket.PacketID);
                 return;
             }
 

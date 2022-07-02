@@ -94,12 +94,19 @@ namespace RoundsVC
         {
             if (DEBUG)
             {
-                UnityEngine.Debug.Log($"[{ModName}] {message}");
+                Instance.Logger.LogInfo($"[{ModName}] {message}");
             }
         }
         internal static void LogError(object msg)
         {
-            UnityEngine.Debug.LogError($"[{ModName}] {msg}");
+            Instance.Logger.LogError($"[{ModName}] {msg}");
+        }
+        internal static void LogWarning(object msg)
+        {
+            if (DEBUG)
+            {
+                Instance.Logger.LogWarning($"[{ModName}] {msg}");
+            }
         }
 
         public static float GetVolumeByActorID(int actorID)
