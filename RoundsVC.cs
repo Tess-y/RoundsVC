@@ -16,6 +16,7 @@ using On;
 using System.Linq;
 using RoundsVC.Utils;
 using InControl;
+using UnityEngine.SceneManagement;
 
 namespace RoundsVC
 {
@@ -138,6 +139,8 @@ namespace RoundsVC
                     DefaultChannelEnabled = true;
                 });
 
+                this.StartCoroutine(SetupLobbyActionsWhenReady());
+                
                 orig(self);
             };
             try
@@ -168,7 +171,7 @@ namespace RoundsVC
                 }
                 OptionsMenuDemoCO = StartCoroutine(DemoUI());
             }, GUI, null, true);
-
+            
             this.StartCoroutine(SetupLobbyActionsWhenReady());
         }
         private static IEnumerator SetupLobbyActionsWhenReady()
