@@ -47,41 +47,49 @@ namespace RoundsVC.UI
             {
                 int actorID = actorIDandChannelID.Key;
                 int channelID = actorIDandChannelID.Value;
-                Transform playerBox = vcLayoutGroup.transform.Find($"{actorID}");
-                if (playerBox is null)
+                VoiceChannels.IVoiceChannel voiceChannel = VoiceChat.VoiceChannels[channelID];
+                if (voiceChannel.GlobalUIIconsEnabled || actorID == LocalPlayerID)
                 {
-                    playerBox = GameObject.Instantiate(vcPlayerBoxPrefab, vcLayoutGroup.transform).transform;
-                    playerBox.gameObject.name = $"{actorID}";
+                    Transform playerBox = vcLayoutGroup.transform.Find($"{actorID}");
+                    if (playerBox is null)
+                    {
+                        playerBox = GameObject.Instantiate(vcPlayerBoxPrefab, vcLayoutGroup.transform).transform;
+                        playerBox.gameObject.name = $"{actorID}";
+                    }
+                    playerBox.GetComponent<Image>().color = VoiceChat.VoiceChannels[channelID].ChannelColor.WithOpacity(UIOpacity);
+                    TextMeshProUGUI Text = playerBox.GetComponentInChildren<TextMeshProUGUI>();
+                    if (actorID > DemoPlayerID1) { Text.text = $"<smallcaps>{(actorID == LocalPlayerID ? PhotonNetwork.LocalPlayer.NickName : PhotonNetwork.CurrentRoom.Players[actorID].NickName)}{(RoundsVC.DEBUG ? $" [{VoiceChat.VoiceChannels[channelID].ChannelName}]" : "")}"; }
+                    else
+                    {
+                        Text.text = $"<smallcaps>Player{-actorID + DemoPlayerID1 + 1}";
+                    }
+                    Text.color = Color.white.WithOpacity(UIOpacity);
+                    playerBox.gameObject.GetOrAddComponent<PlayerBoxFade>().ResetTimer();
+                    playerBox.gameObject.SetActive(true);
+                    if (actorID == LocalPlayerID)
+                    {
+                        playerBox.SetAsFirstSibling();
+                    }
                 }
-                playerBox.GetComponent<Image>().color = VoiceChat.VoiceChannels[channelID].ChannelColor.WithOpacity(UIOpacity);
-                TextMeshProUGUI Text = playerBox.GetComponentInChildren<TextMeshProUGUI>();
-                if (actorID > DemoPlayerID1) { Text.text = $"<smallcaps>{(actorID == LocalPlayerID ? PhotonNetwork.LocalPlayer.NickName : PhotonNetwork.CurrentRoom.Players[actorID].NickName)}{(RoundsVC.DEBUG ? $" [{VoiceChat.VoiceChannels[channelID].ChannelName}]" : "")}"; }
-                else
+                if (voiceChannel.LocalUIIconsEnabled)
                 {
-                    Text.text = $"<smallcaps>Player{-actorID + DemoPlayerID1 + 1}";
+
+                    Player player = actorID == LocalPlayerID ? PlayerManager.instance.GetLocalPlayer() : PlayerManager.instance.GetPlayerWithActorID(actorID);
+                    if (player is null) { continue; }
+                    Transform wobbleObjects = player.transform.Find("WobbleObjects");
+                    if (wobbleObjects is null) { continue; }
+                    Transform playerVCIcon = wobbleObjects.Find("PlayerVCIcon");
+                    if (playerVCIcon is null)
+                    {
+                        playerVCIcon = GameObject.Instantiate(vcPlayerVCIconPrefab, wobbleObjects).transform;
+                        playerVCIcon.localPosition = new Vector3(1.25f, 1.5f, 0f);
+                        playerVCIcon.localScale = new Vector3(0.05f, 0.05f, 1f);
+                        playerVCIcon.gameObject.name = "PlayerVCIcon";
+                    }
+                    playerVCIcon.GetComponent<SpriteRenderer>().color = VoiceChat.VoiceChannels[channelID].ChannelColor.WithOpacity(UIOpacity);
+                    playerVCIcon.gameObject.GetOrAddComponent<PlayerVCIconFade>().ResetTimer();
+                    playerVCIcon.gameObject.SetActive(true);
                 }
-                Text.color = Color.white.WithOpacity(UIOpacity);
-                playerBox.gameObject.GetOrAddComponent<PlayerBoxFade>().ResetTimer();
-                playerBox.gameObject.SetActive(true);
-                if (actorID == LocalPlayerID)
-                {
-                    playerBox.SetAsFirstSibling();
-                }
-                Player player = actorID == LocalPlayerID ? PlayerManager.instance.GetLocalPlayer() : PlayerManager.instance.GetPlayerWithActorID(actorID);
-                if (player is null) { continue; }
-                Transform wobbleObjects = player.transform.Find("WobbleObjects");
-                if (wobbleObjects is null) { continue; }
-                Transform playerVCIcon = wobbleObjects.Find("PlayerVCIcon");
-                if (playerVCIcon is null)
-                {
-                    playerVCIcon = GameObject.Instantiate(vcPlayerVCIconPrefab, wobbleObjects).transform;
-                    playerVCIcon.localPosition = new Vector3(1.25f, 1.5f, 0f);
-                    playerVCIcon.localScale = new Vector3(0.05f, 0.05f, 1f);
-                    playerVCIcon.gameObject.name = "PlayerVCIcon";
-                }
-                playerVCIcon.GetComponent<SpriteRenderer>().color = VoiceChat.VoiceChannels[channelID].ChannelColor.WithOpacity(UIOpacity);
-                playerVCIcon.gameObject.GetOrAddComponent<PlayerVCIconFade>().ResetTimer();
-                playerVCIcon.gameObject.SetActive(true);
             }
             actorIDsTalking.Clear();
         }

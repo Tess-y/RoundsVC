@@ -11,6 +11,8 @@ namespace RoundsVC.VoiceChannels
         Color ChannelColor { get; } // channel color
         AudioFilters AudioFilters { get; } // audio filter options
         SpatialEffects SpatialEffects { get; } // spatialized audio options
+        bool GlobalUIIconsEnabled { get; } // show channel player speaking icons in the global UI 
+        bool LocalUIIconsEnabled { get; } // show channel player speaking icons in the local UI
         bool SpeakingEnabled(Player player); // whether or not the player can speak in this channel right now
         float RelativeVolume(Player speaking, Player listening); // the relative volume (0 to 1) of chat in this channel
 
