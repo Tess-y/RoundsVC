@@ -176,6 +176,8 @@ namespace RoundsVC
         }
         private static IEnumerator SetupLobbyActionsWhenReady()
         {
+            LobbyActions?.Destroy();
+            yield return new WaitForEndOfFrame();
             yield return new WaitUntil(() => InputManager.IsSetup);
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
